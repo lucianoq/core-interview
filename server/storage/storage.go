@@ -12,7 +12,8 @@ var database *sql.DB
 
 func DBConnect() *sql.DB {
 	if database == nil {
-		db := os.Getwd() + "/db.sqlite"
+		pwd, _ := os.Getwd()
+		db := pwd + "/db.sqlite"
 		log.Print("Connecting to DB ", db)
 		datab, err := sql.Open("sqlite3", db)
 		if err != nil {
@@ -32,7 +33,7 @@ func DBClose() {
 	}
 }
 
-func Store(id, ciphertext string) error {
+func Insert(id, ciphertext string) error {
 	db := DBConnect()
 	_, err := db.Exec("INSERT INTO encrypted VALUES (?, ?)", id, ciphertext)
 	if err != nil {
@@ -42,7 +43,7 @@ func Store(id, ciphertext string) error {
 	return nil
 }
 
-func Retrieve(id string) (string, error) {
+func Select(id string) (string, error) {
 	db := DBConnect()
 	var cyphertext string
 	err := db.QueryRow("SELECT ciphertext FROM encrypted WHERE id=?", id).Scan(&cyphertext)
