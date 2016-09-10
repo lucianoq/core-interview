@@ -14,6 +14,8 @@ func Start() {
 	rtr.HandleFunc("/store", store).Methods("POST")
 	rtr.HandleFunc("/retrieve/{id}/{key}", retrieve).Methods("GET")
 
+	http.Handle("/", rtr)
+	
 	log.Print("Server starting...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
