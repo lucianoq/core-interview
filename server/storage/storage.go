@@ -9,6 +9,17 @@ import (
 )
 
 var database *sql.DB
+var dbfile string
+
+func Check() error {
+	pwd, _ := os.Getwd()
+	dbfile = pwd + "/db.sqlite"
+	_, err := os.Stat(dbfile)
+	if os.IsNotExist(err) {
+		return errors.New("DB file does not exist")
+	}
+	return nil
+}
 
 func DBConnect() *sql.DB {
 	if database == nil {
@@ -37,8 +48,7 @@ func Insert(id, ciphertext string) error {
 	db := DBConnect()
 	_, err := db.Exec("INSERT INTO encrypted VALUES (?, ?)", id, ciphertext)
 	if err != nil {
-		log.Print(err.Error())
-		return errors.New("Error inserting lift into DB")
+		return err
 	}
 	return nil
 }
@@ -48,8 +58,7 @@ func Select(id string) (string, error) {
 	var cyphertext string
 	err := db.QueryRow("SELECT ciphertext FROM encrypted WHERE id=?", id).Scan(&cyphertext)
 	if err != nil {
-		log.Print(err.Error())
-		return "", errors.New("Unable to find message in db")
+		return "", err
 	}
 	return cyphertext, nil
 }
