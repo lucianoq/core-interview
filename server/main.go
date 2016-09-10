@@ -1,6 +1,6 @@
 package main
 
-import "core_interview/server/webserver"
+import "core-interview/server/webserver"
 
 func main() {
 	webserver.Start()
