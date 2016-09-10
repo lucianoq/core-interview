@@ -8,7 +8,14 @@ import (
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 )
+
+type Request struct {
+	Id   string `json:"id"`
+	Data string `json:"data"`
+	Key  string `json:"key"`
+}
 
 func Start() {
 	rtr := mux.NewRouter()
@@ -24,62 +31,59 @@ func Start() {
 
 func store(w http.ResponseWriter, r *http.Request) {
 	log.Print("Received POST on /store")
-
-	type StoreRequest struct {
-		Id   string `json:"id"`
-		Data string `json:"data"`
-	}
-
-	body, err := ioutil.ReadAll(r.Body);
-	if err != nil {
-		log.Print(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	var req StoreRequest
-	err = json.Unmarshal(body, &req)
-	if err != nil {
-		log.Print(err.Error())
+	req, err := getVar(r)
+	if err != nil || req.Id == "" || req.Data == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	log.Printf("--- from id=`%s`", req.Id)
 
 	aesKey, err := es.Store(req.Id, req.Data)
-	if err != nil {
-		log.Print(err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	fmt.Fprintf(w, "%s", aesKey)
+	//log.Print("AES key = " + aesKey)
+	exit(w, aesKey, err)
 }
 
 func retrieve(w http.ResponseWriter, r *http.Request) {
 	log.Print("Received GET on /retrieve")
-
-	type RetrieveRequest struct {
-		Id  string `json:"id"`
-		Key string `json:"key"`
+	req, err := getVar(r)
+	if err != nil || req.Id == "" || req.Key == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+	log.Printf("--- with id=`%s`", req.Id)
+
+	payload, err := es.Retrieve(req.Id, req.Key)
+
+	exit(w, payload, err)
+}
+
+func exit(w http.ResponseWriter, output string, err error) {
+	if err != nil {
+		log.Print(err.Error())
+		switch {
+		case strings.HasPrefix(err.Error(), "UNIQUE"):
+			w.WriteHeader(http.StatusConflict)
+		case strings.HasPrefix(err.Error(), "sql: no rows"):
+			w.WriteHeader(http.StatusNotFound)
+		case strings.HasPrefix(err.Error(), "illegal base64"):
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	fmt.Fprintf(w, "%s", output)
+}
+
+func getVar(r *http.Request) (Request, error) {
 	body, err := ioutil.ReadAll(r.Body);
 	if err != nil {
-		log.Print(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return Request{}, err
 	}
-	var req RetrieveRequest
+	var req Request
 	err = json.Unmarshal(body, &req)
 	if err != nil {
-		log.Print(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return Request{}, err
 	}
-
-	log.Printf("--- with id=`%s`", req.Id)
-	payload, err := es.Retrieve(req.Id, req.Key)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	fmt.Fprintf(w, "%s", payload)
+	return req, nil
 }
