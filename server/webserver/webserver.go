@@ -4,7 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	es "core_interview/server/encryption_server"
+	es "core-interview/server/encryption_server"
 	"fmt"
 )
 
@@ -23,7 +23,7 @@ func store(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, data := vars["id"], vars["data"]
 	log.Printf("--- from id=`%s`", id)
-	aesKey, err := es.Store(id, data)
+	aesKey, err := es.Store([]byte(id), []byte(data))
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -38,7 +38,7 @@ func retrieve(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, key := vars["id"], vars["key"]
 	log.Printf("--- with id=`%s` and key=`%s`", id, key)
-	payload, err := es.Retrieve(id, key)
+	payload, err := es.Retrieve([]byte(id), []byte(key))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
