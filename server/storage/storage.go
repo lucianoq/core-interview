@@ -25,14 +25,12 @@ func DBConnect() *sql.DB {
 	if database == nil {
 		pwd, _ := os.Getwd()
 		db := pwd + "/db.sqlite"
-		log.Print("Connecting to DB ", db)
 		datab, err := sql.Open("sqlite3", db)
 		if err != nil {
 			log.Fatal("Error opening database")
 		}
 		database = datab
 	} else {
-		log.Print("Ping the connection")
 		database.Ping()
 	}
 	return database
