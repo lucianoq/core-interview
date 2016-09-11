@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"core-interview/server/storage"
+	"strconv"
 )
 
 type Request struct {
@@ -18,7 +19,7 @@ type Request struct {
 	Key  string `json:"key"`
 }
 
-func Start() {
+func Start(port int) {
 	err := storage.Check()
 	if err != nil {
 		log.Print(err.Error())
@@ -36,7 +37,7 @@ func Start() {
 	defer log.Println("Server stopping.")
 	defer storage.DBClose()
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":" + strconv.Itoa(port), nil))
 }
 
 func store(w http.ResponseWriter, r *http.Request) {
