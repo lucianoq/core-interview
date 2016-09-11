@@ -6,11 +6,13 @@ import (
 	"bytes"
 	"io/ioutil"
 	"errors"
+	"strconv"
 )
 
-const SERVER = "http://localhost:8080"
-
-type HttpClient struct{}
+type HttpClient struct {
+	Address string
+	Port    int
+}
 
 type Body struct {
 	Id   string `json:"id"`
@@ -21,19 +23,19 @@ type Body struct {
 func (h *HttpClient) Store(id, payload []byte) (aesKey []byte, err error) {
 	m := Body{string(id), string(payload), ""}
 	j, _ := json.Marshal(m)
-	aesKey, err = post("store", j)
+	aesKey, err = h.post("store", j)
 	return
 }
 
 func (h *HttpClient) Retrieve(id, aesKey []byte) (payload []byte, err error) {
 	m := Body{string(id), "", string(aesKey)}
 	j, _ := json.Marshal(m)
-	payload, err = post("retrieve", j)
+	payload, err = h.post("retrieve", j)
 	return
 }
 
-func post(command string, jsonStr []byte) ([]byte, error) {
-	url := SERVER + "/" + command
+func (h *HttpClient) post(command string, jsonStr []byte) ([]byte, error) {
+	url := h.Address + ":" + strconv.Itoa(h.Port) + "/" + command
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
