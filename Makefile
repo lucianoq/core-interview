@@ -1,4 +1,4 @@
-.PHONY: db server client clean run-server
+.PHONY: db server client clean
 
 all: db server client
 
@@ -10,9 +10,6 @@ server:
 
 client:
 	go build -o yoti ./client/main
-
-run-server:
-	./yoti_server >/dev/null 2>&1 &
 
 clean:
 	rm -f db.sqlite
