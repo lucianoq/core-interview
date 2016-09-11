@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"strings"
+	"core-interview/server/storage"
 )
 
 type Request struct {
@@ -18,6 +19,12 @@ type Request struct {
 }
 
 func Start() {
+	err := storage.Check()
+	if err != nil {
+		log.Print(err.Error())
+		return
+	}
+
 	rtr := mux.NewRouter()
 
 	rtr.HandleFunc("/store", store).Methods("POST")
@@ -25,7 +32,10 @@ func Start() {
 
 	http.Handle("/", rtr)
 
-	log.Print("Server starting...")
+	log.Println("Server starting...")
+	defer log.Println("Server stopping.")
+	defer storage.DBClose()
+
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
@@ -36,7 +46,7 @@ func store(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Printf("--- from id=`%s`", req.Id)
+	log.Printf("- Correct request with id `%s`\n", req.Id)
 
 	aesKey, err := es.Store(req.Id, req.Data)
 	//log.Print("AES key = " + aesKey)
@@ -50,7 +60,7 @@ func retrieve(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Printf("--- with id=`%s`", req.Id)
+	log.Printf("- Correct request with id `%s`\n", req.Id)
 
 	payload, err := es.Retrieve(req.Id, req.Key)
 
